@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Técnico-Econômico de Combustíveis Industriais</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #242830;
+    --border2: #2e3440;
+    --accent: #f0a500;
+    --accent2: #e05c2a;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --text: #e8eaf0;
+    --text2: #8892a4;
+    --text3: #4a5568;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: 'IBM Plex Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0d1117 0%, #0a0c10 60%);
+    border-bottom: 1px solid var(--border2);
+    padding: 40px 48px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(240,165,0,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .header-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(32px, 5vw, 56px);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    font-size: 14px;
+    color: var(--text2);
+    max-width: 500px;
+    font-weight: 300;
+  }
+
+  /* LAYOUT */
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+  .main { padding: 32px 48px; }
+  @media(max-width: 768px) {
+    header { padding: 28px 20px 24px; }
+    .main { padding: 20px 16px; }
+  }
+
+  /* SECTIONS */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .section-body { padding: 20px; }
+
+  /* REGIME TRIBUTÁRIO */
+  .regime-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+  .regime-btn {
+    flex: 1; min-width: 140px;
+    padding: 12px 16px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .regime-btn:hover { border-color: var(--accent); color: var(--text); }
+  .regime-btn.active {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.1);
+    color: var(--accent);
+  }
+
+  /* FUEL CARDS */
+  .fuels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .fuel-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .fuel-card:hover { border-color: var(--border2); }
+  .fuel-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .fuel-index {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .fuel-remove {
+    background: none; border: none;
+    color: var(--text3); cursor: pointer;
+    font-size: 18px; line-height: 1;
+    padding: 2px 6px; border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .fuel-remove:hover { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* INPUTS */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .field-row.full { grid-template-columns: 1fr; }
+  .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  input[type="text"], input[type="number"], select {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    width: 100%;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238892a4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .toggle {
+    position: relative; display: inline-block;
+    width: 32px; height: 18px;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--border2); border-radius: 18px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    width: 12px; height: 12px;
+    left: 3px; top: 3px;
+    background: var(--text3); border-radius: 50%;
+    transition: 0.2s;
+  }
+  input:checked + .toggle-slider { background: var(--accent); }
+  input:checked + .toggle-slider:before { transform: translateX(14px); background: var(--bg); }
+  .toggle-label { font-family: var(--font-mono); font-size: 10px; color: var(--text2); }
+
+  /* ICMS MODE BUTTONS */
+  .icms-mode-btn {
+    padding: 6px 10px;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text3);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .icms-mode-btn:hover { border-color: var(--accent); color: var(--text2); }
+  .icms-mode-btn.active {
+    border-color: var(--accent2);
+    background: rgba(224,92,42,0.12);
+    color: var(--accent2);
+  }
+
+  /* SEPARATOR */
+  .sep { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  /* ADD FUEL BUTTON */
+  .btn-add {
+    width: 100%; padding: 12px;
+    background: none;
+    border: 1px dashed var(--border2);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    margin-top: 16px;
+  }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CALCULATE BUTTON */
+  .btn-calc {
+    display: block; width: 100%;
+    padding: 16px 32px;
+    background: var(--accent);
+    border: none; border-radius: 6px;
+    color: var(--bg);
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin: 24px 0;
+  }
+  .btn-calc:hover { background: #ffb820; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(240,165,0,0.25); }
+  .btn-calc:active { transform: translateY(0); }
+
+  /* RESULTS */
+  #results { display: none; }
+  #results.visible { display: block; }
+
+  .winner-card {
+    background: linear-gradient(135deg, rgba(240,165,0,0.12) 0%, rgba(240,165,0,0.04) 100%);
+    border: 1px solid rgba(240,165,0,0.4);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .winner-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .winner-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .winner-name {
+    font-family: var(--font-display);
+    font-size: 36px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .winner-cost {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  /* RANKING */
+  .ranking-item {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center; gap: 14px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+  }
+  .ranking-item:hover { border-color: var(--border2); }
+  .rank-pos {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--text3);
+    text-align: center;
+  }
+  .rank-pos.first { color: var(--accent); }
+  .rank-name { font-size: 14px; font-weight: 500; }
+  .rank-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .rank-cost { text-align: right; }
+  .rank-cost-val { font-family: var(--font-mono); font-size: 13px; color: var(--text); }
+  .rank-diff {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    margin-top: 3px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .rank-diff.best { background: rgba(34,197,94,0.15); color: var(--green); }
+  .rank-diff.worse { background: rgba(239,68,68,0.1); color: var(--red); }
+
+  /* CHART */
+  .chart-wrap { padding: 20px 0 8px; }
+  .chart-bar-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .chart-label {
+    font-family: var(--font-mono);
+    font-size: 10px; color: var(--text2);
+    width: 120px; text-align: right;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chart-bar-bg { flex: 1; height: 28px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .chart-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px; color: var(--bg);
+    font-weight: 600;
+    transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+    min-width: 40px;
+  }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    font-family: var(--font-mono);
+    font-size: 9px; color: var(--text3);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border2);
+    text-align: left; white-space: nowrap;
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  tbody tr:hover td { background: var(--surface2); }
+  tbody tr.best-row td { color: var(--text); }
+  tbody tr.best-row td:first-child { color: var(--accent); font-weight: 600; }
+
+  /* NOTICE */
+  .notice {
+    border: 1px solid var(--border2);
+    border-left: 3px solid var(--accent2);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text2);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* UNIT DISPLAY */
+  .unit-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .unit-tab {
+    padding: 6px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text2); cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .unit-tab:hover { border-color: var(--accent); color: var(--text); }
+  .unit-tab.active { border-color: var(--accent); background: rgba(240,165,0,0.1); color: var(--accent); }
+
+  /* SISTEMA TRIBUTÁRIO SELECTOR */
+  .sistema-selector { display: flex; gap: 0; margin-bottom: 20px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border2); }
+  .sistema-btn {
+    flex: 1; padding: 13px 16px;
+    background: var(--surface2);
+    border: none;
+    color: var(--text2);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-transform: uppercase;
+    position: relative;
+  }
+  .sistema-btn + .sistema-btn { border-left: 1px solid var(--border2); }
+  .sistema-btn:hover { background: var(--surface); color: var(--text); }
+  .sistema-btn.active-atual {
+    background: rgba(240,165,0,0.12);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .sistema-btn.active-reforma {
+    background: rgba(59,130,246,0.13);
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  .sistema-badge {
+    display: inline-block;
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.08em;
+  }
+  .badge-atual { background: rgba(240,165,0,0.2); color: var(--accent); }
+  .badge-reforma { background: rgba(59,130,246,0.2); color: #60a5fa; }
+
+  /* REFORMA INFO BOX */
+  .reforma-info {
+    background: rgba(59,130,246,0.07);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-left: 3px solid #3b82f6;
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #93c5fd;
+    line-height: 1.7;
+  }
+
+  /* IBS/CBS TOGGLE ACTIVE COLOR */
+  .toggle-reforma input:checked + .toggle-slider { background: #3b82f6; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">Análise de Matriz Energética Industrial</div>
+  <h1>Simulador <span>Técnico-Econômico</span><br>de Combustíveis</h1>
+  <p class="subtitle">Compare combustíveis pelo custo real da energia útil entregue ao processo térmico.</p>
+</header>
+
+<div class="main">
+
+  <!-- SISTEMA TRIBUTÁRIO (HORIZONTE TEMPORAL) -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">01 — Sistema Tributário Aplicado</span>
+    </div>
+    <div class="section-body">
+      <div class="sistema-selector">
+        <button class="sistema-btn active-atual" id="btn-sistema-atual" onclick="setSistema('atual')">
+          Sistema Atual (ICMS / PIS / COFINS)
+          <span class="sistema-badge badge-atual">VIGENTE</span>
+        </button>
+        <button class="sistema-btn" id="btn-sistema-reforma" onclick="setSistema('reforma')">
+          Reforma Tributária (IBS / CBS)
+          <span class="sistema-badge badge-reforma">EC 132/2023</span>
+        </button>
+      </div>
+
+      <div id="regime-section">
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Enquadramento do Comprador</div>
+        <div class="regime-grid">
+          <button class="regime-btn active" onclick="setRegime('simples')">Simples Nacional</button>
+          <button class="regime-btn" onclick="setRegime('presumido')">Lucro Presumido</button>
+          <button class="regime-btn" onclick="setRegime('real')">Lucro Real</button>
+        </div>
+        <div id="regime-info" style="margin-top:10px; font-family: var(--font-mono); font-size:11px; color:var(--text2);"></div>
+      </div>
+
+      <div id="reforma-info-box" class="reforma-info" style="display:none;">
+        <strong style="color:#93c5fd;letter-spacing:0.1em;">IVA DUAL — Não Cumulatividade Plena (EC 132/2023)</strong><br>
+        No regime do IVA Dual, CBS (federal) e IBS (estadual/municipal) incidem por fora sobre o preço de aquisição.<br>
+        Empresas industriais têm direito ao crédito integral de CBS e IBS nas aquisições de insumos energéticos.<br>
+        O crédito abate diretamente o preço efetivo do combustível no processo produtivo.<br>
+        <span style="color:var(--text3);">↳ Enquadramento abaixo indica o regime do comprador para fins de perfil de creditamento.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNIDADE DE RESULTADO -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">02 — Unidade de Comparação</span>
+    </div>
+    <div class="section-body">
+      <div class="unit-tabs">
+        <div class="unit-tab active" onclick="setUnit('mcal')" id="tab-mcal">R$/Mcal útil</div>
+        <div class="unit-tab" onclick="setUnit('kcal')" id="tab-kcal">R$/kcal útil</div>
+        <div class="unit-tab" onclick="setUnit('kwh')" id="tab-kwh">R$/kWh útil</div>
+        <div class="unit-tab" onclick="setUnit('gj')" id="tab-gj">R$/GJ útil</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMBUSTÍVEIS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">03 — Combustíveis para Comparação</span>
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--text3);" id="fuel-count">9 combustíveis</span>
+    </div>
+    <div class="section-body">
+      <div class="fuels-grid" id="fuels-grid"></div>
+      <button class="btn-add" onclick="addFuel()">+ Adicionar combustível</button>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calcular()">Calcular Melhor Combustível →</button>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Resultado — Combustível Vencedor</span>
+      </div>
+      <div class="section-body">
+        <div class="winner-card" id="winner-card"></div>
+
+        <div style="margin-top:24px;">
+          <div class="section-title" style="margin-bottom:14px;">Ranking Energético</div>
+          <div id="ranking-list"></div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <div class="section-title" style="margin-bottom:14px;">Comparativo Visual</div>
+          <div class="chart-wrap" id="chart-area"></div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <div class="section-title" style="margin-bottom:14px;">Tabela Técnica Detalhada</div>
+          <div class="table-wrap">
+            <table id="detail-table"></table>
+          </div>
+        </div>
+
+        <div class="notice">
+          ⚠ Os resultados são estimativas técnico-econômicas e dependem da validação dos dados fiscais, operacionais e contratuais informados pelo usuário. Consulte um profissional habilitado para decisões de investimento.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── ESTADO GLOBAL ──────────────────────────────────────────────────────────
+let regime = 'simples';
+let displayUnit = 'mcal';
+let sistemaAtivo = 'atual'; // 'atual' | 'reforma'
+
+// ─── TEXTOS REGIME ──────────────────────────────────────────────────────────
+const regimeInfoAtual = {
+  simples:   '↳ Sem aproveitamento de crédito de ICMS ou PIS/COFINS.',
+  presumido: '↳ Pode aproveitar crédito de ICMS quando aplicável. PIS/COFINS: regime cumulativo (sem crédito padrão).',
+  real:      '↳ Pode aproveitar crédito de ICMS, PIS e COFINS quando aplicável (regime não cumulativo).'
+};
+const regimeInfoReforma = {
+  simples:   '↳ Simples Nacional: CBS/IBS recolhidos em regime próprio; creditamento integral disponível para compradores industriais.',
+  presumido: '↳ Lucro Presumido: creditamento de CBS e IBS nas aquisições de insumos energéticos industriais.',
+  real:      '↳ Lucro Real: não cumulatividade plena; crédito integral de CBS e IBS sobre todas as entradas de insumos energéticos.'
+};
+
+// ─── DADOS DOS COMBUSTÍVEIS ─────────────────────────────────────────────────
+// Sistema Atual: icmsMode ('pct'|'fixed'), icms(%), icmsFixed(R$), pis(%), cofins(%)
+// Reforma Tributária: reformaMode ('fixed'|'pct'), cbs(R$ ou %), ibs(R$ ou %)
+const defaultFuels = [
+  { name:'GLP',             pci:11100, pciUnit:'kcal/kg',    priceUnit:'R$/kg',    price:5.20,  eff:85,
+    icmsMode:'fixed', icms:0,  icmsFixed:0.87, pis:0.65, cofins:3,  supplier:'normal', icmsCredit:0,
+    reformaMode:'fixed', cbs:0.47, ibs:0.40 },
+  { name:'Gás Natural',     pci:8600,  pciUnit:'kcal/m³',    priceUnit:'R$/m³',    price:3.80,  eff:88,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'normal', icmsCredit:0,
+    reformaMode:'fixed', cbs:0.18, ibs:0.15 },
+  { name:'Diesel',          pci:10100, pciUnit:'kcal/litro',  priceUnit:'R$/litro', price:6.10,  eff:80,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'normal', icmsCredit:0,
+    reformaMode:'fixed', cbs:0.92, ibs:0.78 },
+  { name:'Óleo BPF',        pci:9600,  pciUnit:'kcal/kg',    priceUnit:'R$/kg',    price:3.40,  eff:82,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'normal', icmsCredit:0,
+    reformaMode:'pct',   cbs:8.8,  ibs:7.5 },
+  { name:'Biomassa/Cavaco', pci:2200,  pciUnit:'kcal/kg',    priceUnit:'R$/ton',   price:280,   eff:65,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'simples', icmsCredit:0,
+    reformaMode:'pct',   cbs:8.8,  ibs:7.5 },
+  { name:'Pellet de Madeira',pci:4200, pciUnit:'kcal/kg',    priceUnit:'R$/ton',   price:750,   eff:75,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'simples', icmsCredit:0,
+    reformaMode:'pct',   cbs:8.8,  ibs:7.5 },
+  { name:'Lenha',           pci:2500,  pciUnit:'kcal/kg',    priceUnit:'R$/ton',   price:180,   eff:55,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'simples', icmsCredit:0,
+    reformaMode:'pct',   cbs:8.8,  ibs:7.5 },
+  { name:'Biogás',          pci:5500,  pciUnit:'kcal/m³',    priceUnit:'R$/m³',    price:1.50,  eff:85,
+    icmsMode:'pct',   icms:12, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'normal', icmsCredit:0,
+    reformaMode:'pct',   cbs:8.8,  ibs:7.5 },
+  { name:'Energia Elétrica',pci:860,   pciUnit:'kcal/kWh',   priceUnit:'R$/kWh',   price:0.72,  eff:95,
+    icmsMode:'pct',   icms:17, icmsFixed:0,    pis:0.65, cofins:3,  supplier:'normal', icmsCredit:0,
+    reformaMode:'pct',   cbs:8.8,  ibs:7.5 },
+];
+
+let fuels = JSON.parse(JSON.stringify(defaultFuels));
+// creditFlags.atual: { icms, pis, cofins } | creditFlags.reforma: { cbs, ibs }
+let creditFlags = fuels.map(() => ({
+  atual:   { icms: false, pis: false, cofins: false },
+  reforma: { cbs: true,  ibs: true }
+}));
+
+// ─── UTILITÁRIOS ────────────────────────────────────────────────────────────
+function normalizePrice(price, priceUnit) {
+  return priceUnit === 'R$/ton' ? price / 1000 : parseFloat(price);
+}
+
+function getIcmsRs(fuel, normPrice) {
+  if (fuel.icmsMode === 'fixed') {
+    const v = parseFloat(fuel.icmsFixed) || 0;
+    return fuel.priceUnit === 'R$/ton' ? v / 1000 : v;
+  }
+  return normPrice * ((parseFloat(fuel.icms) || 0) / 100);
+}
+
+function getTaxRsReforma(fuel, normPrice, field) {
+  // field: 'cbs' | 'ibs'
+  const val = parseFloat(fuel[field]) || 0;
+  if (fuel.reformaMode === 'fixed') {
+    return fuel.priceUnit === 'R$/ton' ? val / 1000 : val;
+  }
+  return normPrice * (val / 100);
+}
+
+function convertCost(costPerKcal) {
+  switch(displayUnit) {
+    case 'kcal': return { val: costPerKcal,            label: 'R$/kcal útil' };
+    case 'mcal': return { val: costPerKcal * 1000,     label: 'R$/Mcal útil' };
+    case 'kwh':  return { val: costPerKcal * 860,      label: 'R$/kWh útil' };
+    case 'gj':   return { val: costPerKcal * 238845.9, label: 'R$/GJ útil' };
+  }
+}
+
+// ─── CÁLCULO PRINCIPAL ──────────────────────────────────────────────────────
+function calcCostPerKcal(fuel, flags) {
+  const pci   = parseFloat(fuel.pci)  || 0;
+  const price = parseFloat(fuel.price)|| 0;
+  const eff   = (parseFloat(fuel.eff) || 0) / 100;
+  if (!pci || !price || !eff) return null;
+
+  const normPrice = normalizePrice(price, fuel.priceUnit);
+  let liquidPrice, creditA = 0, creditB = 0, creditC = 0, taxA = 0, taxB = 0;
+
+  if (sistemaAtivo === 'atual') {
+    // ── Sistema Atual: ICMS / PIS / COFINS ──────────────────────────────
+    const pis    = (parseFloat(fuel.pis)    || 0) / 100;
+    const cofins = (parseFloat(fuel.cofins) || 0) / 100;
+    taxA = getIcmsRs(fuel, normPrice);
+    taxB = normPrice * pis;
+    const taxC = normPrice * cofins;
+
+    const fa = flags.atual;
+    if (regime === 'presumido' || regime === 'real') {
+      if (fuel.supplier === 'simples') {
+        if (fa.icms) creditA = normPrice * ((parseFloat(fuel.icmsCredit)||0)/100);
+      } else {
+        if (fa.icms) creditA = taxA;
+      }
+    }
+    if (regime === 'real' && fuel.supplier !== 'simples') {
+      if (fa.pis)    creditB = taxB;
+      if (fa.cofins) creditC = taxC;
+    }
+    liquidPrice = normPrice - creditA - creditB - creditC;
+    return { costPerKcal: liquidPrice / (pci * eff), liquidPrice, normPrice,
+             creditA, creditB, creditC, taxA, taxB, taxC,
+             labelA:'ICMS', labelB:'PIS', labelC:'COF' };
+
+  } else {
+    // ── Reforma Tributária: CBS / IBS ────────────────────────────────────
+    taxA = getTaxRsReforma(fuel, normPrice, 'cbs');
+    taxB = getTaxRsReforma(fuel, normPrice, 'ibs');
+
+    const fr = flags.reforma;
+    if (fr.cbs) creditA = taxA;
+    if (fr.ibs) creditB = taxB;
+    liquidPrice = normPrice - creditA - creditB;
+    return { costPerKcal: liquidPrice / (pci * eff), liquidPrice, normPrice,
+             creditA, creditB, creditC: 0, taxA, taxB, taxC: 0,
+             labelA:'CBS', labelB:'IBS', labelC:'' };
+  }
+}
+
+// ─── SISTEMA TRIBUTÁRIO ─────────────────────────────────────────────────────
+function setSistema(s) {
+  sistemaAtivo = s;
+  const btnAtual    = document.getElementById('btn-sistema-atual');
+  const btnReforma  = document.getElementById('btn-sistema-reforma');
+  const infoBox     = document.getElementById('reforma-info-box');
+
+  btnAtual.className   = 'sistema-btn' + (s === 'atual'   ? ' active-atual'   : '');
+  btnReforma.className = 'sistema-btn' + (s === 'reforma' ? ' active-reforma' : '');
+  infoBox.style.display = s === 'reforma' ? 'block' : 'none';
+
+  // Atualizar texto do regime info
+  setRegime(regime);
+  renderFuels();
+}
+
+// ─── REGIME ─────────────────────────────────────────────────────────────────
+function setRegime(r) {
+  regime = r;
+  document.querySelectorAll('.regime-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['simples','presumido','real'][i] === r);
+  });
+  const info = sistemaAtivo === 'reforma' ? regimeInfoReforma[r] : regimeInfoAtual[r];
+  document.getElementById('regime-info').textContent = info;
+  renderFuels();
+}
+
+// ─── UNIDADE ────────────────────────────────────────────────────────────────
+function setUnit(u) {
+  displayUnit = u;
+  document.querySelectorAll('.unit-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+u).classList.add('active');
+}
+
+// ─── RENDER CARDS ───────────────────────────────────────────────────────────
+function renderFuels() {
+  const grid = document.getElementById('fuels-grid');
+  const isReforma = sistemaAtivo === 'reforma';
+  const canIcms   = !isReforma && regime !== 'simples';
+  const canPis    = !isReforma && regime === 'real';
+  const canCofins = !isReforma && regime === 'real';
+
+  grid.innerHTML = fuels.map((f, i) => {
+    const fl = creditFlags[i];
+    const supplierSimples = f.supplier === 'simples';
+    const unit = f.priceUnit.replace('R$/', '');
+
+    // Bloco de tributos: Atual vs Reforma
+    const tributosHTML = isReforma ? `
+      <div class="field-row full" style="margin-bottom:8px;">
+        <div class="field-group">
+          <label style="color:#60a5fa;">Modalidade CBS / IBS</label>
+          <div style="display:flex;gap:6px;margin-top:2px;">
+            <button class="icms-mode-btn ${f.reformaMode==='fixed'?'active':''}"
+              style="${f.reformaMode==='fixed'?'border-color:#3b82f6;background:rgba(59,130,246,0.12);color:#60a5fa;':''}"
+              onclick="setReformaMode(${i},'fixed')" style="flex:1;">R$ Fixo/Unidade</button>
+            <button class="icms-mode-btn ${f.reformaMode==='pct'?'active':''}"
+              style="${f.reformaMode==='pct'?'border-color:#3b82f6;background:rgba(59,130,246,0.12);color:#60a5fa;':''}"
+              onclick="setReformaMode(${i},'pct')" style="flex:1;">% Ad valorem</button>
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label style="color:#60a5fa;">CBS ${f.reformaMode==='fixed'?'(R$/'+unit+')':'(%)'}</label>
+          <input type="number" value="${f.cbs||0}" step="0.001" min="0"
+            onchange="updateFuel(${i},'cbs',this.value)"
+            style="border-color:rgba(59,130,246,0.4);">
+        </div>
+        <div class="field-group">
+          <label style="color:#60a5fa;">IBS ${f.reformaMode==='fixed'?'(R$/'+unit+')':'(%)'}</label>
+          <input type="number" value="${f.ibs||0}" step="0.001" min="0"
+            onchange="updateFuel(${i},'ibs',this.value)"
+            style="border-color:rgba(59,130,246,0.4);">
+        </div>
+      </div>
+      ${f.reformaMode==='fixed'?`<div style="font-family:var(--font-mono);font-size:10px;color:#3b5fac;margin-bottom:8px;padding:6px 8px;background:rgba(59,130,246,0.05);border-radius:4px;border:1px solid rgba(59,130,246,0.15);">
+        ↳ Regime específico monofásico: valor fixo por ${unit} (Leis Complementares 192/2022 e Art. 9º EC 132).
+      </div>`:''}
+      <div class="toggle-row">
+        <label class="toggle toggle-reforma"><input type="checkbox" ${fl.reforma.cbs?'checked':''}
+          onchange="toggleCreditReforma(${i},'cbs',this.checked)"><span class="toggle-slider"></span></label>
+        <span class="toggle-label" style="color:#60a5fa;">Aproveitar crédito de CBS</span>
+      </div>
+      <div class="toggle-row">
+        <label class="toggle toggle-reforma"><input type="checkbox" ${fl.reforma.ibs?'checked':''}
+          onchange="toggleCreditReforma(${i},'ibs',this.checked)"><span class="toggle-slider"></span></label>
+        <span class="toggle-label" style="color:#60a5fa;">Aproveitar crédito de IBS</span>
+      </div>
+    ` : `
+      <div class="field-row full" style="margin-bottom:8px;">
+        <div class="field-group">
+          <label>Tipo de Incidência do ICMS</label>
+          <div style="display:flex;gap:6px;margin-top:2px;">
+            <button class="icms-mode-btn ${f.icmsMode==='pct'?'active':''}"
+              onclick="setIcmsMode(${i},'pct')" style="flex:1;">% Ad valorem</button>
+            <button class="icms-mode-btn ${f.icmsMode==='fixed'?'active':''}"
+              onclick="setIcmsMode(${i},'fixed')" style="flex:1;">R$ Fixo/Tabelado</button>
+          </div>
+        </div>
+      </div>
+      <div class="field-row three">
+        <div class="field-group">
+          ${f.icmsMode === 'fixed' ? `
+            <label>ICMS (R$/${unit}) <span style="color:var(--accent2);font-size:9px;">MONOF.</span></label>
+            <input type="number" value="${f.icmsFixed||0}" step="0.001" min="0"
+              onchange="updateFuel(${i},'icmsFixed',this.value)" placeholder="ex: 0.87">
+          ` : `
+            <label>ICMS (%)</label>
+            <input type="number" value="${f.icms}" step="0.1" min="0" max="100"
+              onchange="updateFuel(${i},'icms',this.value)">
+          `}
+        </div>
+        <div class="field-group">
+          <label>PIS (%)</label>
+          <input type="number" value="${f.pis}" step="0.01" onchange="updateFuel(${i},'pis',this.value)">
+        </div>
+        <div class="field-group">
+          <label>COFINS (%)</label>
+          <input type="number" value="${f.cofins}" step="0.01" onchange="updateFuel(${i},'cofins',this.value)">
+        </div>
+      </div>
+      ${f.icmsMode === 'fixed' ? `<div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:8px;padding:6px 8px;background:rgba(240,165,0,0.05);border-radius:4px;border:1px solid rgba(240,165,0,0.15);">
+        ↳ ICMS monofásico/tabelado: valor fixo por ${unit} independente do preço de venda.</div>` : ''}
+      ${supplierSimples ? `<div class="field-row full" style="margin-top:4px;">
+        <div class="field-group">
+          <label>% Crédito ICMS destacado na nota (Simples)</label>
+          <input type="number" value="${f.icmsCredit||0}" step="0.01" max="100"
+            onchange="updateFuel(${i},'icmsCredit',this.value)">
+        </div></div>` : ''}
+      ${canIcms ? `<div class="toggle-row">
+        <label class="toggle"><input type="checkbox" ${fl.atual.icms?'checked':''}
+          onchange="toggleCreditAtual(${i},'icms',this.checked)"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Aproveitar crédito ICMS</span>
+      </div>` : ''}
+      ${canPis ? `<div class="toggle-row">
+        <label class="toggle"><input type="checkbox" ${fl.atual.pis?'checked':''}
+          onchange="toggleCreditAtual(${i},'pis',this.checked)"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Aproveitar crédito PIS</span>
+      </div>` : ''}
+      ${canCofins ? `<div class="toggle-row">
+        <label class="toggle"><input type="checkbox" ${fl.atual.cofins?'checked':''}
+          onchange="toggleCreditAtual(${i},'cofins',this.checked)"><span class="toggle-slider"></span></label>
+        <span class="toggle-label">Aproveitar crédito COFINS</span>
+      </div>` : ''}
+    `;
+
+    return `
+    <div class="fuel-card" id="card-${i}" style="${isReforma?'border-color:rgba(59,130,246,0.2);':''}">
+      <div class="fuel-card-header">
+        <span class="fuel-index">#${String(i+1).padStart(2,'0')}</span>
+        <button class="fuel-remove" onclick="removeFuel(${i})">✕</button>
+      </div>
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Nome do Combustível</label>
+          <input type="text" value="${f.name}" onchange="updateFuel(${i},'name',this.value)">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>PCI</label>
+          <input type="number" value="${f.pci}" onchange="updateFuel(${i},'pci',this.value)">
+        </div>
+        <div class="field-group">
+          <label>Unidade PCI</label>
+          <select onchange="updateFuel(${i},'pciUnit',this.value)">
+            ${['kcal/kg','kcal/ton','kcal/m³','kcal/litro','kcal/kWh'].map(u=>`<option ${f.pciUnit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Preço de Compra</label>
+          <input type="number" value="${f.price}" step="0.01" onchange="updateFuel(${i},'price',this.value)">
+        </div>
+        <div class="field-group">
+          <label>Unidade Preço</label>
+          <select onchange="updateFuel(${i},'priceUnit',this.value)">
+            ${['R$/kg','R$/ton','R$/m³','R$/litro','R$/kWh'].map(u=>`<option ${f.priceUnit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Eficiência Térmica (%)</label>
+          <input type="number" value="${f.eff}" min="1" max="100" onchange="updateFuel(${i},'eff',this.value)">
+        </div>
+        <div class="field-group">
+          <label>Tipo de Fornecedor</label>
+          <select onchange="updateFuel(${i},'supplier',this.value)">
+            <option value="normal" ${f.supplier==='normal'?'selected':''}>Empresa Normal</option>
+            <option value="simples" ${f.supplier==='simples'?'selected':''}>Optante Simples</option>
+          </select>
+        </div>
+      </div>
+      <hr class="sep">
+      ${tributosHTML}
+    </div>`;
+  }).join('');
+
+  document.getElementById('fuel-count').textContent =
+    fuels.length + ' combustível' + (fuels.length !== 1 ? 's' : '');
+}
+
+// ─── MUTAÇÕES ───────────────────────────────────────────────────────────────
+function updateFuel(i, key, val)              { fuels[i][key] = val; }
+function setIcmsMode(i, mode)                 { fuels[i].icmsMode = mode; renderFuels(); }
+function setReformaMode(i, mode)              { fuels[i].reformaMode = mode; renderFuels(); }
+function toggleCreditAtual(i, key, val)       { creditFlags[i].atual[key] = val; }
+function toggleCreditReforma(i, key, val)     { creditFlags[i].reforma[key] = val; }
+
+function addFuel() {
+  fuels.push({
+    name:'Novo Combustível', pci:5000, pciUnit:'kcal/kg', priceUnit:'R$/kg', price:1, eff:80,
+    icmsMode:'pct', icms:12, icmsFixed:0, pis:0.65, cofins:3, supplier:'normal', icmsCredit:0,
+    reformaMode:'pct', cbs:8.8, ibs:7.5
+  });
+  creditFlags.push({ atual: { icms:false, pis:false, cofins:false }, reforma: { cbs:true, ibs:true } });
+  renderFuels();
+}
+
+function removeFuel(i) {
+  if (fuels.length <= 1) return;
+  fuels.splice(i, 1);
+  creditFlags.splice(i, 1);
+  renderFuels();
+}
+
+// ─── CALCULAR ───────────────────────────────────────────────────────────────
+function calcular() {
+  const results = fuels.map((f, i) => {
+    const r = calcCostPerKcal(f, creditFlags[i]);
+    return r ? { ...r, fuel: f, idx: i } : null;
+  }).filter(Boolean);
+
+  if (!results.length) { alert('Preencha ao menos um combustível válido.'); return; }
+  results.sort((a, b) => a.costPerKcal - b.costPerKcal);
+  const best = results[0];
+
+  // Winner card
+  const { val: bestVal, label: unitLabel } = convertCost(best.costPerKcal);
+  const isReforma = sistemaAtivo === 'reforma';
+  document.getElementById('winner-card').innerHTML = `
+    <div class="winner-label">🏆 Melhor Custo Energético${isReforma?' · Reforma Tributária':''}</div>
+    <div class="winner-name">${best.fuel.name}</div>
+    <div class="winner-cost">${bestVal.toFixed(6)} ${unitLabel}</div>
+    <div style="margin-top:12px;font-family:var(--font-mono);font-size:11px;color:var(--text2);">
+      Eficiência: ${best.fuel.eff}% · PCI: ${Number(best.fuel.pci).toLocaleString('pt-BR')} ${best.fuel.pciUnit}
+    </div>`;
+
+  // Ranking
+  document.getElementById('ranking-list').innerHTML = results.map((r, pos) => {
+    const { val } = convertCost(r.costPerKcal);
+    const diff = pos === 0 ? 0 : ((r.costPerKcal - best.costPerKcal) / best.costPerKcal) * 100;
+    const credits = [];
+    if (r.creditA > 0) credits.push(r.labelA);
+    if (r.creditB > 0) credits.push(r.labelB);
+    if (r.creditC > 0) credits.push(r.labelC);
+    return `<div class="ranking-item">
+      <div class="rank-pos ${pos===0?'first':''}">${pos+1}</div>
+      <div>
+        <div class="rank-name">${r.fuel.name}</div>
+        <div class="rank-sub">Ef. ${r.fuel.eff}% · ${r.fuel.pciUnit}${credits.length?' · Cr. '+credits.join('+'):''}</div>
+      </div>
+      <div class="rank-cost">
+        <div class="rank-cost-val">${val.toFixed(5)}</div>
+        <div class="rank-diff ${pos===0?'best':'worse'}">${pos===0?'BASE':'+'+diff.toFixed(1)+'%'}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Chart
+  const maxCost = results[results.length-1].costPerKcal;
+  const barColors = ['#f0a500','#e05c2a','#3b82f6','#22c55e','#a78bfa','#06b6d4','#f43f5e','#84cc16','#fb923c'];
+  document.getElementById('chart-area').innerHTML = results.map((r, i) => {
+    const { val } = convertCost(r.costPerKcal);
+    const pct = (r.costPerKcal / maxCost) * 100;
+    return `<div class="chart-bar-row">
+      <div class="chart-label">${r.fuel.name}</div>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${pct}%;background:${barColors[i%barColors.length]};">
+          ${val.toFixed(4)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Tabela — cabeçalho dinâmico
+  const { label: unitLabelShort } = convertCost(1);
+  const r0 = results[0];
+  const colC = isReforma ? '' : `<th>${r0.labelC}(%)</th><th>Cr. ${r0.labelC}</th>`;
+  const thead = `<thead><tr>
+    <th>Combustível</th><th>Preço</th><th>Unidade</th><th>PCI</th><th>Ef.(%)</th>
+    <th>${r0.labelA}</th><th>${r0.labelB}</th>${colC}
+    <th>Cr. ${r0.labelA}</th><th>Cr. ${r0.labelB}</th>
+    <th>P. Líq.</th><th>${unitLabelShort}</th><th>vs Melhor</th>
+  </tr></thead>`;
+
+  const tbody = '<tbody>' + results.map((r, pos) => {
+    const { val } = convertCost(r.costPerKcal);
+    const diff = pos === 0 ? '—' : '+' + (((r.costPerKcal - best.costPerKcal)/best.costPerKcal)*100).toFixed(1) + '%';
+
+    // Exibição do tributo A
+    let taxAStr, taxBStr;
+    if (isReforma) {
+      const modeLabel = r.fuel.reformaMode === 'fixed' ? ' fixo' : '%';
+      taxAStr = r.fuel.reformaMode === 'fixed'
+        ? 'R$ '+(parseFloat(r.fuel.cbs)||0).toFixed(3)+modeLabel
+        : (parseFloat(r.fuel.cbs)||0).toFixed(2)+'%';
+      taxBStr = r.fuel.reformaMode === 'fixed'
+        ? 'R$ '+(parseFloat(r.fuel.ibs)||0).toFixed(3)+modeLabel
+        : (parseFloat(r.fuel.ibs)||0).toFixed(2)+'%';
+    } else {
+      taxAStr = r.fuel.icmsMode === 'fixed'
+        ? 'R$ '+(parseFloat(r.fuel.icmsFixed)||0).toFixed(3)+' fixo'
+        : (r.fuel.icms||0)+'%';
+      taxBStr = (r.fuel.pis||0)+'%';
+    }
+    const colCTd = isReforma ? '' :
+      `<td>${(r.fuel.cofins||0)}%</td><td>${r.creditC>0?'R$ '+r.creditC.toFixed(4):'—'}</td>`;
+
+    return `<tr class="${pos===0?'best-row':''}">
+      <td>${r.fuel.name}</td>
+      <td>${parseFloat(r.fuel.price).toFixed(2)}</td>
+      <td>${r.fuel.priceUnit}</td>
+      <td>${Number(r.fuel.pci).toLocaleString('pt-BR')}</td>
+      <td>${r.fuel.eff}</td>
+      <td>${taxAStr}</td><td>${taxBStr}</td>${colCTd}
+      <td>${r.creditA>0?'R$ '+r.creditA.toFixed(4):'—'}</td>
+      <td>${r.creditB>0?'R$ '+r.creditB.toFixed(4):'—'}</td>
+      <td>R$ ${r.liquidPrice.toFixed(4)}</td>
+      <td>${val.toFixed(6)}</td>
+      <td>${diff}</td>
+    </tr>`;
+  }).join('') + '</tbody>';
+
+  document.getElementById('detail-table').innerHTML = thead + tbody;
+
+  const resEl = document.getElementById('results');
+  resEl.classList.add('visible');
+  setTimeout(() => resEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+setRegime('simples');
+renderFuels();
+</script>
+</body>
+</html>
